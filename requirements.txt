@@ -1,5 +1,4 @@
-# --- PyTorch CPU-only build (much smaller/lighter than default GPU build) ---
---extra-index-url https://download.pytorch.org/whl/cpu
+# torch (CPU build will be selected automatically on a Linux host with no GPU)
 torch>=2.2,<3.0
 
 # MCP Core & Server Framework
@@ -23,4 +22,4 @@ python-multipart
 
 # File parsing (used by pipeline.py)
 pypdf
-python-docx
+python-docxs
