@@ -21,16 +21,45 @@ DB_PATH = os.path.join(BASE_DIR, "qdrant_db")
 # Initialize FastMCP server instance
 mcp = FastMCP("ClauseGuard-MCP-Server")
 
-# Initialize persistent Qdrant client and embedding model
-qdrant_client = QdrantClient(path=DB_PATH)
-embedder = SentenceTransformer("all-MiniLM-L6-v2")
+# Qdrant client and the embedding model are the two heaviest objects in this
+# process (torch + a loaded transformer model can easily be several hundred
+# MB). They used to be created eagerly at module import time, which meant
+# that simply importing mcp_server.py -- which happens as soon as main.py
+# starts, before the app has served a single request -- paid that full memory
+# cost upfront. On memory-capped hosts (e.g. a 512MB container) this caused
+# the process to be OOM-killed during startup, before uvicorn even finished
+# binding to a port.
+#
+# Making both lazy (created once, on first actual use, then cached) means the
+# app can boot and start accepting connections cheaply; the memory cost is
+# only paid the first time a request actually needs to embed text or touch
+# Qdrant, not on every process start regardless of whether that request ever
+# comes in.
+_qdrant_client = None
+_embedder = None
+
+
+def get_qdrant_client() -> QdrantClient:
+    global _qdrant_client
+    if _qdrant_client is None:
+        _qdrant_client = QdrantClient(path=DB_PATH)
+    return _qdrant_client
+
+
+def get_embedder() -> SentenceTransformer:
+    global _embedder
+    if _embedder is None:
+        _embedder = SentenceTransformer("all-MiniLM-L6-v2")
+    return _embedder
 
 
 def _cleanup_qdrant():
-    try:
-        qdrant_client.close()
-    except Exception:
-        pass
+    global _qdrant_client
+    if _qdrant_client is not None:
+        try:
+            _qdrant_client.close()
+        except Exception:
+            pass
 
 
 atexit.register(_cleanup_qdrant)
@@ -43,6 +72,9 @@ def build_policy_collection(collection_name: str, policy_documents: list[dict]):
         collection_name: Unique session collection name.
         policy_documents: List of dicts containing 'source' and 'text'.
     """
+    qdrant_client = get_qdrant_client()
+    embedder = get_embedder()
+
     collections = [c.name for c in qdrant_client.get_collections().collections]
     if collection_name in collections:
         qdrant_client.delete_collection(collection_name)
@@ -93,6 +125,7 @@ def build_policy_collection(collection_name: str, policy_documents: list[dict]):
 
 def drop_policy_collection(collection_name: str):
     """Deletes a session-specific Qdrant collection."""
+    qdrant_client = get_qdrant_client()
     collections = [c.name for c in qdrant_client.get_collections().collections]
     if collection_name in collections:
         qdrant_client.delete_collection(collection_name)
@@ -110,6 +143,9 @@ def search_policy_docs(query_text: str, limit: int = 3, collection_name: str = "
     Returns:
         Formatted string containing matched policy passages and their document sources.
     """
+    embedder = get_embedder()
+    qdrant_client = get_qdrant_client()
+
     query_vector = embedder.encode(query_text).tolist()
 
     try:
