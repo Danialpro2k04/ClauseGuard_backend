@@ -4,8 +4,18 @@ import atexit
 from fastmcp import FastMCP
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
-from sentence_transformers import SentenceTransformer
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+# NOTE: sentence_transformers (and therefore torch) and langchain_text_splitters
+# are intentionally NOT imported here at module level. `import sentence_transformers`
+# transitively imports torch, and importing torch alone -- before any model is
+# even instantiated -- can cost 150-300MB of resident memory just from loading
+# its C++ backend and CPU kernels. Since this module is imported as soon as
+# main.py starts (main -> pipeline -> agents.retrieval -> server.mcp_server),
+# that cost was being paid at process boot, before uvicorn even bound to a
+# port, which is what was causing the container to be OOM-killed on a 500MB
+# host before any request was ever served. Both imports are moved inside the
+# functions that actually need them (get_embedder, build_policy_collection),
+# so the cost is only paid the first time a request actually touches
+# embeddings, not on every process start.
 
 # review_store.py lives at project root, one level up from server/. Append it
 # to sys.path before importing, same pattern used by agents/retrieval.py and
@@ -46,9 +56,10 @@ def get_qdrant_client() -> QdrantClient:
     return _qdrant_client
 
 
-def get_embedder() -> SentenceTransformer:
+def get_embedder():
     global _embedder
     if _embedder is None:
+        from sentence_transformers import SentenceTransformer
         _embedder = SentenceTransformer("all-MiniLM-L6-v2")
     return _embedder
 
@@ -74,6 +85,8 @@ def build_policy_collection(collection_name: str, policy_documents: list[dict]):
     """
     qdrant_client = get_qdrant_client()
     embedder = get_embedder()
+
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
 
     collections = [c.name for c in qdrant_client.get_collections().collections]
     if collection_name in collections:
