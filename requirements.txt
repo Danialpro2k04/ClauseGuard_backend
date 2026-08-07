@@ -1,6 +1,6 @@
 # --- PyTorch CPU-only build (much smaller/lighter than default GPU build) ---
 --extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.4.1+cpu
+torch>=2.2,<3.0
 
 # MCP Core & Server Framework
 mcp>=1.1.0
