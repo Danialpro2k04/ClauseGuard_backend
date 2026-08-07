@@ -22,4 +22,4 @@ python-multipart
 
 # File parsing (used by pipeline.py)
 pypdf
-python-docxs
+python-docx
