@@ -1,6 +1,9 @@
 # torch (CPU build will be selected automatically on a Linux host with no GPU)
 torch>=2.2,<3.0
 
+# LLM routing (used by agents/llm.py)
+litellm
+
 # MCP Core & Server Framework
 mcp>=1.1.0
 fastmcp>=1.0.0
