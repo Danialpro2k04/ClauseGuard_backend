@@ -1,0 +1,26 @@
+# --- PyTorch CPU-only build (much smaller/lighter than default GPU build) ---
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.4.1+cpu
+
+# MCP Core & Server Framework
+mcp>=1.1.0
+fastmcp>=1.0.0
+
+# Vector Database & Embeddings
+qdrant-client>=1.10.0
+sentence-transformers>=3.0.0
+transformers<5.0.0
+
+# Chunking & Data Utilities
+langchain-text-splitters>=0.2.0
+pydantic>=2.7.0
+python-dotenv>=1.0.1
+
+# Web server
+fastapi
+uvicorn[standard]
+python-multipart
+
+# File parsing (used by pipeline.py)
+pypdf
+python-docx

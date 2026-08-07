@@ -1,0 +1,26 @@
+from agents.llm import call_llm
+
+def run_intake_agent(contract_text: str, provider: str, model_name: str, api_key: str) -> dict:
+    """Parses contract text and identifies risk-bearing clauses."""
+    system_prompt = (
+        "You are an expert Legal Intake Compliance Agent. Your job is to analyze contract text "
+        "and identify key risk-bearing clauses (e.g., data security, liability, data retention, IP).\n\n"
+        "CRITICAL INSTRUCTION: Do NOT generate questions. Instead, formulate clear, direct, "
+        "declarative STATEMENTS summarizing what the contract stipulates or permits. "
+        "These statements will be semantically matched against company policy documents.\n\n"
+        "Return ONLY valid JSON with this exact structure:\n"
+        "{\n"
+        '  "document_type": "NDA | MSA | Vendor Agreement | Unknown",\n'
+        '  "clauses": [\n'
+        '    {\n'
+        '      "clause_title": "Title or summary of clause",\n'
+        '      "clause_text": "Exact or verbatim snippet from the contract",\n'
+        '      "compliance_statement": "Declarative statement of what the clause permits/requires (e.g., \'Data storage at rest is not required to be encrypted.\')"\n'
+        "    }\n"
+        "  ]\n"
+        "}"
+    )
+
+    user_prompt = f"Analyze this contract text:\n\n{contract_text}"
+
+    return call_llm(provider, model_name, api_key, system_prompt, user_prompt)

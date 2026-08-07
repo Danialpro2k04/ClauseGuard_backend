@@ -1,0 +1,19 @@
+# Constraints (not new dependencies) — caps versions pulled in by requirements.txt
+# without changing requirements.txt itself. Use with:
+#   pip install -r requirements.txt -c constraints.txt
+#
+# Why these two:
+# - transformers 5.x hard-requires torch>=2.4 at runtime (checked in transformers'
+#   own source, not just declared metadata). transformers 4.x only needs torch>=2.1,
+#   which your installed torch 2.2.2 already satisfies.
+# - torch==2.2.2 is pinned because no torch wheel newer than 2.2.2 exists on PyPI
+#   for macOS x86_64 (Intel) + cp311. Leaving torch unconstrained lets pip try to
+#   upgrade it to a version with no compatible wheel for your machine.
+# - numpy<2 is pinned because torch==2.2.2 was compiled against NumPy 1.x's C API.
+#   NumPy 2.0 broke that ABI, so torch silently disables tensor<->numpy conversion
+#   (tensor.numpy()) when numpy>=2 is present, causing "RuntimeError: Numpy is not
+#   available" at the first embedding call rather than at import time. PyTorch
+#   only added NumPy-2.x support starting in torch 2.3, which has no Intel-Mac wheel.
+transformers<5.0.0
+torch==2.2.2
+numpy<2
