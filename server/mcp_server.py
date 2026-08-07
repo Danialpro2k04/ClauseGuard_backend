@@ -1,7 +1,7 @@
 import os
 import sys
 import atexit
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
 from sentence_transformers import SentenceTransformer

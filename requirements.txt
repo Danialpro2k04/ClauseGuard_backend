@@ -4,9 +4,8 @@ torch>=2.2,<3.0
 # LLM routing (used by agents/llm.py)
 litellm
 
-# MCP Core & Server Framework
-mcp>=1.1.0
-fastmcp>=1.0.0
+# MCP Server Framework (standalone package; FastMCP is no longer bundled in mcp v1+)
+fastmcp>=2.0.0,<3.0.0
 
 # Vector Database & Embeddings
 qdrant-client>=1.10.0
