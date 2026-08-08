@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -118,6 +119,7 @@ def run_risk_scoring_agent(retrieval_payload: dict, contract_name: str, provider
     for clause in clauses:
         evaluated = score_clause_risk(contract_name, clause, provider, model_name, api_key, session_id=session_id)
         scored_clauses.append(evaluated)
+        time.sleep(1.5)  # <-- Pacing pause to stay safely within Groq's TPM quota
 
     return {
         "contract_name": contract_name,
