@@ -33,11 +33,11 @@ def process_policies(session_id: str, file_paths: list[str], embedding_api_key: 
     build_policy_collection(collection_name=session_id, policy_documents=policy_documents, embedding_api_key=embedding_api_key)
     return {"status": "success"}
 
-def review_contract(file_path: str, session_id: str, provider: str, model_name: str, api_key: str, embedding_api_key: str, top_k_policies: int = 4) -> dict:
+def review_contract(file_path: str, session_id: str, provider: str, model_name: str, api_key: str, embedding_api_key: str, top_k_policies: int = 4, original_filename: str | None = None) -> dict:
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Contract not found: {file_path}")
 
-    contract_name = os.path.basename(file_path)
+    contract_name = original_filename or os.path.basename(file_path)
     contract_text = extract_text_from_file(file_path)
 
     print(" [Step 1/3] Running Intake Agent...")

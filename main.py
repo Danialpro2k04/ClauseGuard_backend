@@ -54,9 +54,7 @@ async def upload_policies(
     files: List[UploadFile] = File(...),
     authorization: str = Header(default=None)
 ):
-    # Embedding requires calling OpenAI's API, so this endpoint now needs a
-    # key too. Same Authorization: Bearer pattern as /api/v1/audit, for the
-    # same reason (keeps the secret out of the multipart form body).
+
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Expected 'Authorization: Bearer <embedding_api_key>' header")
     embedding_api_key = authorization.removeprefix("Bearer ").strip()
@@ -117,7 +115,8 @@ async def audit_contract(
             provider=provider,
             model_name=model_name,
             api_key=api_key,
-            embedding_api_key=embedding_api_key
+            embedding_api_key=embedding_api_key,
+            original_filename=file.filename
         )
         
         if isinstance(report, dict):

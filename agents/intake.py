@@ -5,6 +5,12 @@ def run_intake_agent(contract_text: str, provider: str, model_name: str, api_key
     system_prompt = (
         "You are an expert Legal Intake Compliance Agent. Your job is to analyze contract text "
         "and identify key risk-bearing clauses (e.g., data security, liability, data retention, IP).\n\n"
+        "GRANULARITY RULE: If a single paragraph contains multiple distinct obligations or "
+        "restrictions (e.g., one sentence sets an audit frequency and a separate sentence "
+        "prohibits a specific verification method like on-site inspection), extract EACH as "
+        "its own separate entry in the clauses array -- even if they appear in the same "
+        "paragraph of the source contract. Do not merge distinct restrictions into one "
+        "clause_text just because they are textually adjacent.\n\n"
         "CRITICAL INSTRUCTION: Do NOT generate questions. Instead, formulate clear, direct, "
         "declarative STATEMENTS summarizing what the contract stipulates or permits. "
         "These statements will be semantically matched against company policy documents.\n\n"
