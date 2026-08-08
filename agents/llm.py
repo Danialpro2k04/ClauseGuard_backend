@@ -11,7 +11,7 @@ def call_llm(provider: str, model_name: str, api_key: str, system_prompt: str, u
     formatted_model = f"{safe_provider}/{model_name}" if safe_provider != "openai" else model_name
     
     max_retries = 5
-    retry_delay_seconds = 7  # Wait time to let Groq's rolling TPM limit cool down
+    retry_delay_seconds = 4
 
     for attempt in range(max_retries):
         try:
@@ -44,5 +44,5 @@ def call_llm(provider: str, model_name: str, api_key: str, system_prompt: str, u
         except litellm.RateLimitError as e:
             if attempt == max_retries - 1:
                 raise e
-            print(f"⚠️ Groq Rate Limit hit (Attempt {attempt + 1}/{max_retries}). Sleeping {retry_delay_seconds}s for TPM quota to reset...")
+            print(f"⚠️ Groq Rate Limit hit (Attempt {attempt + 1}/{max_retries}). Sleeping {retry_delay_seconds}s...")
             time.sleep(retry_delay_seconds)
