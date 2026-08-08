@@ -1,4 +1,5 @@
 import json
+import re
 from litellm import completion
 
 def call_llm(provider: str, model_name: str, api_key: str, system_prompt: str, user_prompt: str) -> dict:
@@ -7,7 +8,7 @@ def call_llm(provider: str, model_name: str, api_key: str, system_prompt: str, u
     # FIX: Force the provider string to be lowercase to satisfy LiteLLM's strict formatting
     safe_provider = provider.lower()
     
-    # LiteLLM expects format like "groq/llama-3.1-8b-instant" except for OpenAI
+    # LiteLLM expects format like "groq/gpt-oss-20b" except for OpenAI
     formatted_model = f"{safe_provider}/{model_name}" if safe_provider != "openai" else model_name
     
     response = completion(
@@ -27,4 +28,16 @@ def call_llm(provider: str, model_name: str, api_key: str, system_prompt: str, u
         response_format={"type": "json_object"}
     )
     
-    return json.loads(response.choices[0].message.content)
+    raw_content = response.choices[0].message.content
+    
+    # Strip markdown code fences if the model included them
+    cleaned = re.sub(r"^```(?:json)?\s*", "", raw_content.strip(), flags=re.MULTILINE)
+    cleaned = re.sub(r"\s*```$", "", cleaned, flags=re.MULTILINE)
+    
+    # Extract object boundaries to drop conversational preamble/postscript
+    start = cleaned.find("{")
+    end = cleaned.rfind("}")
+    if start != -1 and end != -1:
+        cleaned = cleaned[start:end+1]
+        
+    return json.loads(cleaned)

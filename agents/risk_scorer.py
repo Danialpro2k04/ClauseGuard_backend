@@ -63,7 +63,11 @@ def score_clause_risk(contract_name: str, clause_info: dict, provider: str, mode
         "MEDIUM risk level -- state that as the reason rather than inventing a comparison point.\n"
         "- When you reference the policy, quote or closely paraphrase the specific retrieved sentence, "
         "and name which [Policy Result N] it came from.\n\n"
-        "Return ONLY valid JSON with this structure:\n"
+        "CRITICAL FORMATTING INSTRUCTION: You must respond ONLY with raw, valid JSON. "
+        "Do NOT use markdown code blocks (e.g., do NOT write ```json or ```). "
+        "Do NOT include any preamble, introductory text, or postscript. "
+        "Your entire output must start with '{' and end with '}'.\n\n"
+        "Return JSON with this structure:\n"
         "{\n"
         '  "risk_level": "HIGH | MEDIUM | LOW",\n'
         '  "justification": "Clear, objective breakdown of why this risk score was assigned, grounded '

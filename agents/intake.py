@@ -14,7 +14,11 @@ def run_intake_agent(contract_text: str, provider: str, model_name: str, api_key
         "CRITICAL INSTRUCTION: Do NOT generate questions. Instead, formulate clear, direct, "
         "declarative STATEMENTS summarizing what the contract stipulates or permits. "
         "These statements will be semantically matched against company policy documents.\n\n"
-        "Return ONLY valid JSON with this exact structure:\n"
+        "CRITICAL FORMATTING INSTRUCTION: You must respond ONLY with raw, valid JSON. "
+        "Do NOT use markdown code blocks (e.g., do NOT write ```json or ```). "
+        "Do NOT include any preamble, introductory text, or postscript. "
+        "Your entire output must start with '{' and end with '}'.\n\n"
+        "Return JSON with this exact structure:\n"
         "{\n"
         '  "document_type": "NDA | MSA | Vendor Agreement | Unknown",\n'
         '  "clauses": [\n'
