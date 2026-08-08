@@ -39,7 +39,7 @@ def review_contract(file_path: str, session_id: str, provider: str, model_name: 
         raise FileNotFoundError(f"Contract not found: {file_path}")
 
     # Clear previous audit reviews for this session before running a new analysis
-    review_store.clear_session_reviews(session_id)
+    review_store.clear_session_reviews()
 
     contract_name = original_filename or os.path.basename(file_path)
     contract_text = extract_text_from_file(file_path)
