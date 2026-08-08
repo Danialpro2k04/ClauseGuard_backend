@@ -5,7 +5,7 @@ from litellm import completion
 def call_llm(provider: str, model_name: str, api_key: str, system_prompt: str, user_prompt: str) -> dict:
     """Routes the prompt to the specified LLM provider using LiteLLM."""
     
-    # FIX: Force the provider string to be lowercase to satisfy LiteLLM's strict formatting
+    # Force the provider string to be lowercase to satisfy LiteLLM's strict formatting
     safe_provider = provider.lower()
     
     # LiteLLM expects format like "groq/gpt-oss-20b" except for OpenAI
@@ -18,14 +18,11 @@ def call_llm(provider: str, model_name: str, api_key: str, system_prompt: str, u
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ],
-        # Pinned to 0 (rather than 0.1) so identical input clauses produce identical
-        # compliance_statement paraphrases and identical risk verdicts across runs.
-        # gpt-oss-20b via most providers still has minor residual nondeterminism at
-        # temperature 0 (batching/kernel effects), but this removes the dominant
-        # source of run-to-run drift.
         temperature=0,
         seed=42,
-        response_format={"type": "json_object"}
+        response_format={"type": "json_object"},
+        # Added num_retries to automatically wait and retry if Groq rate limits are hit
+        num_retries=3
     )
     
     raw_content = response.choices[0].message.content
