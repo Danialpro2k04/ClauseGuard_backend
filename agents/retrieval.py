@@ -31,12 +31,13 @@ def _merge_policy_contexts(context_a: str, context_b: str) -> str:
     return "\n\n".join(merged)
 
 
-def run_retrieval_agent(intake_data: dict, collection_name: str = "company_policies", top_k: int = 2) -> dict:
+def run_retrieval_agent(intake_data: dict, embedding_api_key: str, collection_name: str = "company_policies", top_k: int = 2) -> dict:
     """Queries the Qdrant policy database via search_policy_docs
     for each declarative compliance statement extracted by the Intake Agent.
 
     Args:
         intake_data: Structured dictionary output from run_intake_agent().
+        embedding_api_key: User-supplied Cohere API key used to embed each query.
         collection_name: Target session collection in Qdrant.
         top_k: Number of relevant policy passages to retrieve per clause.
 
@@ -63,12 +64,14 @@ def run_retrieval_agent(intake_data: dict, collection_name: str = "company_polic
         # often surfaces topically-relevant chunks the raw legalese misses.
         retrieved_context = search_policy_docs(
             query_text=clause_text,
+            embedding_api_key=embedding_api_key,
             limit=top_k,
             collection_name=collection_name
         )
         if statement:
             statement_context = search_policy_docs(
                 query_text=statement,
+                embedding_api_key=embedding_api_key,
                 limit=top_k,
                 collection_name=collection_name
             )

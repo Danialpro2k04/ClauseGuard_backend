@@ -4,18 +4,18 @@ import atexit
 from fastmcp import FastMCP
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
-# NOTE: sentence_transformers (and therefore torch) and langchain_text_splitters
-# are intentionally NOT imported here at module level. `import sentence_transformers`
-# transitively imports torch, and importing torch alone -- before any model is
-# even instantiated -- can cost 150-300MB of resident memory just from loading
-# its C++ backend and CPU kernels. Since this module is imported as soon as
-# main.py starts (main -> pipeline -> agents.retrieval -> server.mcp_server),
-# that cost was being paid at process boot, before uvicorn even bound to a
-# port, which is what was causing the container to be OOM-killed on a 500MB
-# host before any request was ever served. Both imports are moved inside the
-# functions that actually need them (get_embedder, build_policy_collection),
-# so the cost is only paid the first time a request actually touches
-# embeddings, not on every process start.
+import cohere
+
+# Embeddings are produced via Cohere's embed API instead of a locally-loaded
+# model. Cohere's free Trial API key (1,000 calls/month, no credit card
+# required, issued automatically on signup) is currently the most reliable
+# free option among hosted embedding providers -- OpenAI discontinued its
+# automatic signup credit and now requires prepaid credits for anything
+# beyond a very limited free chat model, which doesn't cover embeddings.
+# Using a hosted API (rather than a local model) also removes torch from the
+# dependency tree entirely, so there's no local memory cost for embedding.
+EMBEDDING_MODEL = "embed-english-v3.0"
+EMBEDDING_DIM = 1024
 
 # review_store.py lives at project root, one level up from server/. Append it
 # to sys.path before importing, same pattern used by agents/retrieval.py and
@@ -31,22 +31,12 @@ DB_PATH = os.path.join(BASE_DIR, "qdrant_db")
 # Initialize FastMCP server instance
 mcp = FastMCP("ClauseGuard-MCP-Server")
 
-# Qdrant client and the embedding model are the two heaviest objects in this
-# process (torch + a loaded transformer model can easily be several hundred
-# MB). They used to be created eagerly at module import time, which meant
-# that simply importing mcp_server.py -- which happens as soon as main.py
-# starts, before the app has served a single request -- paid that full memory
-# cost upfront. On memory-capped hosts (e.g. a 512MB container) this caused
-# the process to be OOM-killed during startup, before uvicorn even finished
-# binding to a port.
-#
-# Making both lazy (created once, on first actual use, then cached) means the
-# app can boot and start accepting connections cheaply; the memory cost is
-# only paid the first time a request actually needs to embed text or touch
-# Qdrant, not on every process start regardless of whether that request ever
-# comes in.
+# Qdrant's client is still process-local and lazy (created once, reused).
+# The embedding client is now a thin OpenAI API wrapper rather than a loaded
+# model, so there's nothing heavy to defer -- but it's still created per-call
+# (not cached globally) since each user supplies their own EMBEDDING_API_KEY,
+# and different sessions/requests may use different keys.
 _qdrant_client = None
-_embedder = None
 
 
 def get_qdrant_client() -> QdrantClient:
@@ -56,12 +46,28 @@ def get_qdrant_client() -> QdrantClient:
     return _qdrant_client
 
 
-def get_embedder():
-    global _embedder
-    if _embedder is None:
-        from sentence_transformers import SentenceTransformer
-        _embedder = SentenceTransformer("all-MiniLM-L6-v2")
-    return _embedder
+def embed_text(text: str, api_key: str, input_type: str = "search_document") -> list[float]:
+    """Embeds a single string via Cohere's embed API.
+
+    Args:
+        text: The text to embed.
+        api_key: The user-supplied EMBEDDING_API_KEY (a Cohere API key).
+        input_type: "search_document" for policy text being stored, or
+            "search_query" for a query being searched against it -- Cohere's
+            embed models are tuned differently for each, which improves
+            retrieval quality when queries and documents are labeled
+            correctly rather than always using the same input_type.
+
+    Returns:
+        A 1024-dimension embedding vector.
+    """
+    client = cohere.Client(api_key)
+    response = client.embed(
+        model=EMBEDDING_MODEL,
+        texts=[text],
+        input_type=input_type,
+    )
+    return response.embeddings[0]
 
 
 def _cleanup_qdrant():
@@ -76,15 +82,15 @@ def _cleanup_qdrant():
 atexit.register(_cleanup_qdrant)
 
 
-def build_policy_collection(collection_name: str, policy_documents: list[dict]):
+def build_policy_collection(collection_name: str, policy_documents: list[dict], embedding_api_key: str):
     """Dynamically creates and populates a session-specific Qdrant collection.
 
     Args:
         collection_name: Unique session collection name.
         policy_documents: List of dicts containing 'source' and 'text'.
+        embedding_api_key: User-supplied Cohere API key used to generate embeddings.
     """
     qdrant_client = get_qdrant_client()
-    embedder = get_embedder()
 
     from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -94,7 +100,7 @@ def build_policy_collection(collection_name: str, policy_documents: list[dict]):
 
     qdrant_client.create_collection(
         collection_name=collection_name,
-        vectors_config=VectorParams(size=384, distance=Distance.COSINE),
+        vectors_config=VectorParams(size=EMBEDDING_DIM, distance=Distance.COSINE),
     )
 
     # chunk_size raised from 500->1200 and overlap from 50->150: at 500 chars,
@@ -118,7 +124,7 @@ def build_policy_collection(collection_name: str, policy_documents: list[dict]):
 
         chunks = text_splitter.split_text(content)
         for chunk_idx, chunk in enumerate(chunks):
-            vector = embedder.encode(chunk).tolist()
+            vector = embed_text(chunk, embedding_api_key, input_type="search_document")
             points.append(
                 PointStruct(
                     id=point_id,
@@ -145,21 +151,24 @@ def drop_policy_collection(collection_name: str):
 
 
 @mcp.tool()
-def search_policy_docs(query_text: str, limit: int = 3, collection_name: str = "company_policies") -> str:
+def search_policy_docs(query_text: str, embedding_api_key: str, limit: int = 3, collection_name: str = "company_policies") -> str:
     """Searches internal company compliance policies for text relevant to a query.
 
     Args:
         query_text: Compliance topic or question.
+        embedding_api_key: User-supplied Cohere API key used to generate the query embedding.
         limit: Number of top relevant policy passages to return (default: 3).
         collection_name: Specific Qdrant collection to search.
 
     Returns:
         Formatted string containing matched policy passages and their document sources.
     """
-    embedder = get_embedder()
     qdrant_client = get_qdrant_client()
 
-    query_vector = embedder.encode(query_text).tolist()
+    try:
+        query_vector = embed_text(query_text, embedding_api_key, input_type="search_query")
+    except Exception as e:
+        return f"RETRIEVAL_ERROR:: Embedding request failed: {str(e)}"
 
     try:
         results = qdrant_client.query_points(

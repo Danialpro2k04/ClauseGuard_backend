@@ -1,6 +1,3 @@
-# torch (CPU build will be selected automatically on a Linux host with no GPU)
-torch>=2.2,<3.0
-
 # LLM routing (used by agents/llm.py)
 litellm
 
@@ -9,8 +6,7 @@ fastmcp>=2.0.0,<3.0.0
 
 # Vector Database & Embeddings
 qdrant-client>=1.10.0
-sentence-transformers>=3.0.0
-transformers<5.0.0
+cohere>=5.0.0
 
 # Chunking & Data Utilities
 langchain-text-splitters>=0.2.0

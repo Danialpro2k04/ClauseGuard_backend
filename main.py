@@ -51,8 +51,16 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 @app.post("/api/v1/policies")
 async def upload_policies(
     session_id: str = Form(...),
-    files: List[UploadFile] = File(...)
+    files: List[UploadFile] = File(...),
+    authorization: str = Header(default=None)
 ):
+    # Embedding requires calling OpenAI's API, so this endpoint now needs a
+    # key too. Same Authorization: Bearer pattern as /api/v1/audit, for the
+    # same reason (keeps the secret out of the multipart form body).
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Expected 'Authorization: Bearer <embedding_api_key>' header")
+    embedding_api_key = authorization.removeprefix("Bearer ").strip()
+
     temp_dir = tempfile.mkdtemp()
     try:
         saved_files = []
@@ -62,7 +70,7 @@ async def upload_policies(
                 f.write(await file.read())
             saved_files.append(file_path)
             
-        process_policies(session_id=session_id, file_paths=saved_files)
+        process_policies(session_id=session_id, file_paths=saved_files, embedding_api_key=embedding_api_key)
         return {"status": "success", "message": f"Policies embedded for session {session_id}"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -74,6 +82,7 @@ async def audit_contract(
     session_id: str = Form(...),
     provider: str = Form(...),
     model_name: str = Form(...),
+    embedding_api_key: str = Form(...),
     file: UploadFile = File(...),
     authorization: str = Header(default=None)
 ) -> Dict[str, Any]:
@@ -107,7 +116,8 @@ async def audit_contract(
             session_id=session_id,
             provider=provider,
             model_name=model_name,
-            api_key=api_key
+            api_key=api_key,
+            embedding_api_key=embedding_api_key
         )
         
         if isinstance(report, dict):
