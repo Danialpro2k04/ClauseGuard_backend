@@ -1,24 +1,3 @@
-"""
-SQLite-backed store for pending human-in-the-loop (HITL) review records.
-
-Replaces the previous pending_reviews.json approach, which had two concurrency
-bugs under real (multi-request) load:
-
-1. log_for_human_review() did a plain read-modify-write of the whole JSON file.
-   Two concurrent /api/v1/audit requests could both read the file before either
-   wrote back, so the second write would silently clobber the first request's
-   appended record.
-
-2. resolve_review() in main.py deleted by array index. Indexes shift on every
-   deletion, so two users resolving reviews concurrently could delete the wrong
-   record -- there was no stable identifier tying a "resolve" action to a
-   specific record.
-
-SQLite gives us atomic single-row writes/deletes for free (each connection call
-here is a short-lived transaction), and every record gets a stable UUID primary
-key so resolution is unambiguous regardless of ordering or concurrent access.
-"""
-
 import os
 import sqlite3
 import uuid
@@ -113,6 +92,16 @@ def delete_review(review_id: str) -> bool:
     with _connect() as conn:
         cursor = conn.execute("DELETE FROM reviews WHERE id = ?", (review_id,))
         return cursor.rowcount > 0
+
+
+def clear_session_reviews(session_id: str = None) -> int:
+    """Deletes all pending review records for a specific session_id (or all reviews if session_id is None)."""
+    with _connect() as conn:
+        if session_id:
+            cursor = conn.execute("DELETE FROM reviews WHERE session_id = ?", (session_id,))
+        else:
+            cursor = conn.execute("DELETE FROM reviews")
+        return cursor.rowcount
 
 
 init_db()

@@ -2,6 +2,7 @@ import os
 import pypdf
 from docx import Document
 
+import review_store
 from agents.intake import run_intake_agent
 from agents.retrieval import run_retrieval_agent
 from agents.risk_scorer import run_risk_scoring_agent
@@ -36,6 +37,9 @@ def process_policies(session_id: str, file_paths: list[str], embedding_api_key: 
 def review_contract(file_path: str, session_id: str, provider: str, model_name: str, api_key: str, embedding_api_key: str, top_k_policies: int = 4, original_filename: str | None = None) -> dict:
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Contract not found: {file_path}")
+
+    # Clear previous audit reviews for this session before running a new analysis
+    review_store.clear_session_reviews(session_id)
 
     contract_name = original_filename or os.path.basename(file_path)
     contract_text = extract_text_from_file(file_path)
