@@ -149,7 +149,7 @@ def log_for_human_review(
     justification: str,
     session_id: str = None
 ) -> str:
-    """Logs an evaluated contract clause to the pending review queue for human sign-off."""
+
     review_id = review_store.add_review(
         contract_name=contract_name,
         clause_text=clause_text,

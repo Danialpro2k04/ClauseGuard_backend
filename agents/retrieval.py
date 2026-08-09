@@ -1,7 +1,7 @@
 import os
 import sys
 
-# Ensure parent directory is in python path to resolve server import
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from server.mcp_server import search_policy_docs
@@ -32,18 +32,6 @@ def _merge_policy_contexts(context_a: str, context_b: str) -> str:
 
 
 def run_retrieval_agent(intake_data: dict, embedding_api_key: str, collection_name: str = "company_policies", top_k: int = 2) -> dict:
-    """Queries the Qdrant policy database via search_policy_docs
-    for each declarative compliance statement extracted by the Intake Agent.
-
-    Args:
-        intake_data: Structured dictionary output from run_intake_agent().
-        embedding_api_key: User-supplied Cohere API key used to embed each query.
-        collection_name: Target session collection in Qdrant.
-        top_k: Number of relevant policy passages to retrieve per clause.
-
-    Returns:
-        dict: Combined payload containing contract metadata, clauses, and retrieved policy context.
-    """
     evaluated_clauses = []
 
     clauses = intake_data.get("clauses", [])
@@ -54,14 +42,6 @@ def run_retrieval_agent(intake_data: dict, embedding_api_key: str, collection_na
         clause_text = clause.get("clause_text", "")
         print(f"  └─ [{idx}/{len(clauses)}] Querying policy database for: '{statement[:60]}...'")
 
-        # Query on BOTH the verbatim clause text and the LLM-paraphrased compliance
-        # statement, then merge. Querying on the paraphrase alone means any wording
-        # drift in the intake agent's output (which varies run-to-run even at low
-        # temperature) changes which policy chunks get retrieved for identical
-        # contract text -- this is the main source of the non-deterministic risk
-        # scores. The verbatim clause text is deterministic, so anchoring on it
-        # stabilizes retrieval; the paraphrase is kept as a second query since it
-        # often surfaces topically-relevant chunks the raw legalese misses.
         retrieved_context = search_policy_docs(
             query_text=clause_text,
             embedding_api_key=embedding_api_key,
