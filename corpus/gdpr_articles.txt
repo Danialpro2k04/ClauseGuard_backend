@@ -1,0 +1,18 @@
+GENERAL DATA PROTECTION REGULATION (GDPR) - SELECTED ARTICLES
+
+Article 17: Right to erasure ('right to be forgotten')
+1. The data subject shall have the right to obtain from the controller the erasure of personal data concerning him or her without undue delay and the controller shall have the obligation to erase personal data without undue delay where one of the following grounds applies:
+(a) the personal data are no longer necessary in relation to the purposes for which they were collected or otherwise processed;
+(b) the data subject withdraws consent on which the processing is based according to point (a) of Article 6(1), or point (a) of Article 9(2), and where there is no other legal ground for the processing;
+(c) the data subject objects to the processing pursuant to Article 21(1) and there are no overriding legitimate grounds for the processing, or the data subject objects to the processing pursuant to Article 21(2);
+(d) the personal data have been unlawfully processed;
+(e) the personal data have to be erased for compliance with a legal obligation in Union or Member State law to which the controller is subject.
+
+Article 32: Security of processing
+1. Taking into account the state of the art, the costs of implementation and the nature, scope, context and purposes of processing as well as the risk of varying likelihood and severity for the rights and freedoms of natural persons, the controller and the processor shall implement appropriate technical and organisational measures to ensure a level of security appropriate to the risk, including inter alia as appropriate:
+(a) the pseudonymisation and encryption of personal data;
+(b) the ability to ensure the ongoing confidentiality, integrity, availability and resilience of processing systems and services;
+(c) the ability to restore the availability and access to personal data in a timely manner in the event of a physical or technical incident;
+(d) a process for regularly testing, assessing and evaluating the effectiveness of technical and organisational measures for ensuring the security of the processing.
+
+2. In assessing the appropriate level of security account shall be taken in particular of the risks that are presented by processing, in particular from accidental or unlawful destruction, loss, alteration, unauthorised disclosure of, or access to personal data transmitted, stored or otherwise processed.

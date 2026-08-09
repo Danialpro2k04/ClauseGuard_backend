@@ -1,0 +1,13 @@
+MASTER SERVICE AGREEMENT - EXHIBIT: DATA SECURITY AND PROTECTION
+
+1. Customer Data and Security Standards. 
+All Customer Data that will be hosted by Licensor under this Agreement will be hosted at data centers maintained and operated strictly within the approved locations. Licensor will be responsible for establishing and maintaining an information security program that is designed to: (i) ensure the security and confidentiality of Customer Data; (ii) protect against any unauthorized access, use, or disclosure. Licensor will maintain physical, technical, and administrative safeguards in any event no less than industry standards in the cloud computing industry to protect the Customer Data.
+
+2. Encryption Requirements. 
+All Customer Data stored or at rest in the Data Centers, or in transport, will be encrypted. Customer Data, including but not limited to sales data, hosted, stored, or held by Licensor in the Product(s) or in the platform operated by Licensor, or on any device owned or in the custody of Licensor, its employees, agents or contractors, will be encrypted using industry-standard protocols.
+
+3. Incident Notification.
+If Licensor suspects or becomes aware of any unauthorized access to any Customer Data or Personal Data by any unauthorized person or third party, or becomes aware of any other security breach relating to Personal Data held or stored by Licensor under this Agreement, Licensor must promptly notify Customer in writing. 
+
+4. Audit and Compliance.
+Documentation of Security Awareness Training must be retained by Licensor, confirming that this training and subsequent annual recertification process have been completed, and available for review by Customer. In lieu of an on-site audit, upon request by Customer, Licensor will use reasonable efforts to complete, within forty-five (45) days of receipt, an Information Security Assessment questionnaire provided by Customer regarding Licensor's information security program.

@@ -1,0 +1,5 @@
+VENDOR MASTER SERVICES AGREEMENT
+
+1. Data Encryption: Vendor will back up all customer records to cloud storage. Encryption at rest is optional based on server configuration.
+
+2. Audit Rights: Customer may audit Vendor's facility strictly once every 5 years with a 90-day prior written notice.
